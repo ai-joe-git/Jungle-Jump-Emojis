@@ -30,11 +30,15 @@
 
         const background = {
             layers: [
+                { emoji: '☁️', size: 40, speed: 0.1, positions: [] },
+                { emoji: '🏔️', size: 100, speed: 0.2, positions: [] },
                 { emoji: '🌴', size: 50, speed: 0.5, positions: [] },
                 { emoji: '🌳', size: 40, speed: 1, positions: [] },
                 { emoji: '🌿', size: 30, speed: 1.5, positions: [] }
             ]
         };
+
+        let dayNightCycle = 0;
 
         function initBackground() {
             background.layers.forEach(layer => {
@@ -43,7 +47,7 @@
                 for (let i = 0; i < count; i++) {
                     layer.positions.push({
                         x: i * layer.size,
-                        y: canvas.height - layer.size + Math.random() * 20
+                        y: layer.emoji === '☁️' ? Math.random() * canvas.height * 0.5 : canvas.height - layer.size + Math.random() * 20
                     });
                 }
             });
@@ -61,8 +65,8 @@
             initBackground();
         }
 
-        initBackground(); // Call this first
-        resizeCanvas(); // Then call this
+        initBackground();
+        resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
         const GRAVITY = 0.4;
@@ -79,6 +83,7 @@
                 this.height = 30;
                 this.velY = 0;
                 this.jumping = false;
+                this.doubleJump = false;
                 this.powerUp = false;
                 this.powerUpTimer = 0;
             }
@@ -98,6 +103,7 @@
                 if (this.y + this.height > canvas.height) {
                     this.y = canvas.height - this.height;
                     this.jumping = false;
+                    this.doubleJump = false;
                 }
 
                 if (this.powerUp) {
@@ -116,6 +122,10 @@
                 if (!this.jumping) {
                     this.velY = JUMP_FORCE;
                     this.jumping = true;
+                    createParticles(this.x, this.y);
+                } else if (!this.doubleJump) {
+                    this.velY = JUMP_FORCE * 0.8;
+                    this.doubleJump = true;
                     createParticles(this.x, this.y);
                 }
             }
@@ -162,7 +172,7 @@
         class PowerUp {
             constructor() {
                 this.x = canvas.width;
-                this.y = Math.random() * (canvas.height - 100) + 50;
+                this.y = Math.random() * (canvas.height * 0.6 - 100) + 50;
                 this.speed = 3;
                 this.emoji = '🔥';
             }
@@ -210,6 +220,27 @@
         let gameOver = false;
 
         function drawBackground() {
+            // Sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            const time = (Math.sin(dayNightCycle) + 1) / 2; // 0 to 1
+            const skyColors = [
+                `rgb(${135 * time}, ${206 * time}, ${235 * time})`, // Sky Blue
+                `rgb(${25 * (1 - time)}, ${25 * (1 - time)}, ${112 * (1 - time)})` // Night Blue
+            ];
+            gradient.addColorStop(0, skyColors[0]);
+            gradient.addColorStop(1, skyColors[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Sun/Moon
+            const sunRadius = 30;
+            const sunX = canvas.width - sunRadius - 20;
+            const sunY = canvas.height * (0.5 - 0.4 * Math.sin(dayNightCycle));
+            ctx.fillStyle = time > 0.5 ? 'yellow' : 'white';
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+            ctx.fill();
+
             background.layers.forEach(layer => {
                 ctx.font = `${layer.size}px Arial`;
                 layer.positions.forEach(pos => {
@@ -217,6 +248,9 @@
                     pos.x -= layer.speed;
                     if (pos.x < -layer.size) {
                         pos.x = canvas.width;
+                        if (layer.emoji === '☁️') {
+                            pos.y = Math.random() * canvas.height * 0.5;
+                        }
                     }
                 });
             });
@@ -296,6 +330,9 @@
 
         function update() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            dayNightCycle += Math.PI / (180 * 60); // Full cycle in 3 minutes
+            if (dayNightCycle > Math.PI * 2) dayNightCycle -= Math.PI * 2;
 
             if (!gameOver) {
                 drawBackground();
