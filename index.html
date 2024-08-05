@@ -423,9 +423,7 @@
                 projectiles.forEach((projectile, index) => {
                     projectile.update();
                     projectile.draw();
-                    if (projectile.x > canvas.width) {
-                        projectiles.splice(index, 1);
-                });
+                    if (projectile.x > canvas.width) {});
 
                 powerUps.forEach(powerUp => {
                     powerUp.update();
@@ -495,3 +493,4 @@
     </script>
 </body>
 </html>
+                        projectiles.splice(index, 1);
