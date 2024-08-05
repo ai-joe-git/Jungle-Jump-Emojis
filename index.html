@@ -26,11 +26,25 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        canvas.width = 800;
-        canvas.height = 400;
+        let isPortrait = window.innerHeight > window.innerWidth;
 
-        const GRAVITY = 0.5;
-        const JUMP_FORCE = -10;
+        function resizeCanvas() {
+            isPortrait = window.innerHeight > window.innerWidth;
+            if (isPortrait) {
+                canvas.width = window.innerWidth * 0.9;
+                canvas.height = window.innerHeight * 0.7;
+            } else {
+                canvas.width = 800;
+                canvas.height = 400;
+            }
+            initBackground();
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const GRAVITY = 0.4;
+        const JUMP_FORCE = -12;
         const MOVE_SPEED = 5;
 
         let highScore = 0;
@@ -43,11 +57,16 @@
                 this.height = 30;
                 this.velY = 0;
                 this.jumping = false;
+                this.powerUp = false;
+                this.powerUpTimer = 0;
             }
 
             draw() {
                 ctx.font = '30px Arial';
                 ctx.fillText('🐒', this.x, this.y);
+                if (this.powerUp) {
+                    ctx.fillText('🔥', this.x + 20, this.y - 20);
+                }
             }
 
             update() {
@@ -57,6 +76,17 @@
                 if (this.y + this.height > canvas.height) {
                     this.y = canvas.height - this.height;
                     this.jumping = false;
+                }
+
+                if (this.powerUp) {
+                    this.powerUpTimer++;
+                    if (this.powerUpTimer % 10 === 0) {
+                        projectiles.push(new Projectile(this.x + 30, this.y));
+                    }
+                    if (this.powerUpTimer >= 300) {
+                        this.powerUp = false;
+                        this.powerUpTimer = 0;
+                    }
                 }
             }
 
@@ -77,6 +107,42 @@
                 this.height = 30;
                 this.speed = Math.random() * 2 + 2;
                 this.emoji = ['🦁', '🐯', '🐍', '🦂'][Math.floor(Math.random() * 4)];
+            }
+
+            draw() {
+                ctx.font = '30px Arial';
+                ctx.fillText(this.emoji, this.x, this.y);
+            }
+
+            update() {
+                this.x -= this.speed;
+            }
+        }
+
+        class Projectile {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.speed = 10;
+                this.emoji = '🥥';
+            }
+
+            draw() {
+                ctx.font = '20px Arial';
+                ctx.fillText(this.emoji, this.x, this.y);
+            }
+
+            update() {
+                this.x += this.speed;
+            }
+        }
+
+        class PowerUp {
+            constructor() {
+                this.x = canvas.width;
+                this.y = Math.random() * (canvas.height - 100) + 50;
+                this.speed = 3;
+                this.emoji = '🔥';
             }
 
             draw() {
@@ -116,6 +182,8 @@
         const player = new Player();
         let enemies = [];
         let particles = [];
+        let projectiles = [];
+        let powerUps = [];
         let score = 0;
         let gameOver = false;
 
@@ -129,6 +197,7 @@
 
         function initBackground() {
             background.layers.forEach(layer => {
+                layer.positions = [];
                 const count = Math.ceil(canvas.width / layer.size) + 1;
                 for (let i = 0; i < count; i++) {
                     layer.positions.push({
@@ -159,13 +228,19 @@
         }
 
         function spawnEnemy() {
-            if (Math.random() < 0.02) {
+            if (Math.random() < 0.01) {
                 enemies.push(new Enemy());
             }
         }
 
+        function spawnPowerUp() {
+            if (Math.random() < 0.002) {
+                powerUps.push(new PowerUp());
+            }
+        }
+
         function checkCollision() {
-            enemies.forEach(enemy => {
+            enemies.forEach((enemy, index) => {
                 if (
                     player.x < enemy.x + enemy.width &&
                     player.x + player.width > enemy.x &&
@@ -173,6 +248,32 @@
                     player.y + player.height > enemy.y
                 ) {
                     gameOver = true;
+                }
+
+                projectiles.forEach((projectile, pIndex) => {
+                    if (
+                        projectile.x < enemy.x + enemy.width &&
+                        projectile.x + 20 > enemy.x &&
+                        projectile.y < enemy.y + enemy.height &&
+                        projectile.y + 20 > enemy.y
+                    ) {
+                        enemies.splice(index, 1);
+                        projectiles.splice(pIndex, 1);
+                        score += 10;
+                    }
+                });
+            });
+
+            powerUps.forEach((powerUp, index) => {
+                if (
+                    player.x < powerUp.x + 30 &&
+                    player.x + player.width > powerUp.x &&
+                    player.y < powerUp.y + 30 &&
+                    player.y + player.height > powerUp.y
+                ) {
+                    player.powerUp = true;
+                    player.powerUpTimer = 0;
+                    powerUps.splice(index, 1);
                 }
             });
         }
@@ -209,6 +310,22 @@
                     }
                 });
 
+                projectiles.forEach((projectile, index) => {
+                    projectile.update();
+                    projectile.draw();
+                    if (projectile.x > canvas.width) {
+                        projectiles.splice(index, 1);
+                    }
+                });
+
+                powerUps.forEach((powerUp, index) => {
+                    powerUp.update();
+                    powerUp.draw();
+                    if (powerUp.x + 30 < 0) {
+                        powerUps.splice(index, 1);
+                    }
+                });
+
                 particles.forEach((particle, index) => {
                     particle.update();
                     particle.draw();
@@ -218,6 +335,7 @@
                 });
 
                 spawnEnemy();
+                spawnPowerUp();
                 checkCollision();
                 drawScore();
 
@@ -235,8 +353,12 @@
             player.x = 50;
             player.y = canvas.height - 50;
             player.velY = 0;
+            player.powerUp = false;
+            player.powerUpTimer = 0;
             enemies = [];
             particles = [];
+            projectiles = [];
+            powerUps = [];
             score = 0;
             gameOver = false;
         }
@@ -263,4 +385,4 @@
         update();
     </script>
 </body>
-  </html>
+</html>
