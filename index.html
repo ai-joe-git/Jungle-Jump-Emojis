@@ -28,6 +28,27 @@
 
         let isPortrait = window.innerHeight > window.innerWidth;
 
+        const background = {
+            layers: [
+                { emoji: '🌴', size: 50, speed: 0.5, positions: [] },
+                { emoji: '🌳', size: 40, speed: 1, positions: [] },
+                { emoji: '🌿', size: 30, speed: 1.5, positions: [] }
+            ]
+        };
+
+        function initBackground() {
+            background.layers.forEach(layer => {
+                layer.positions = [];
+                const count = Math.ceil(canvas.width / layer.size) + 1;
+                for (let i = 0; i < count; i++) {
+                    layer.positions.push({
+                        x: i * layer.size,
+                        y: canvas.height - layer.size + Math.random() * 20
+                    });
+                }
+            });
+        }
+
         function resizeCanvas() {
             isPortrait = window.innerHeight > window.innerWidth;
             if (isPortrait) {
@@ -40,7 +61,8 @@
             initBackground();
         }
 
-        resizeCanvas();
+        initBackground(); // Call this first
+        resizeCanvas(); // Then call this
         window.addEventListener('resize', resizeCanvas);
 
         const GRAVITY = 0.4;
@@ -186,27 +208,6 @@
         let powerUps = [];
         let score = 0;
         let gameOver = false;
-
-        const background = {
-            layers: [
-                { emoji: '🌴', size: 50, speed: 0.5, positions: [] },
-                { emoji: '🌳', size: 40, speed: 1, positions: [] },
-                { emoji: '🌿', size: 30, speed: 1.5, positions: [] }
-            ]
-        };
-
-        function initBackground() {
-            background.layers.forEach(layer => {
-                layer.positions = [];
-                const count = Math.ceil(canvas.width / layer.size) + 1;
-                for (let i = 0; i < count; i++) {
-                    layer.positions.push({
-                        x: i * layer.size,
-                        y: canvas.height - layer.size + Math.random() * 20
-                    });
-                }
-            });
-        }
 
         function drawBackground() {
             background.layers.forEach(layer => {
@@ -381,7 +382,6 @@
             }
         });
 
-        initBackground();
         update();
     </script>
 </body>
