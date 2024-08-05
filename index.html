@@ -37,6 +37,7 @@
             ],
             landscapes: ['🏝️', '🏞️', '⛰️', '🏜️', '🌫️', '🌋'],
             currentLandscape: 0,
+            landscapeX: 0,
             weatherEffects: ['☁️', '☁️', '☁️', '☁️'],
             currentWeather: 0,
             weatherTimer: 0,
@@ -57,6 +58,7 @@
                     });
                 }
             });
+            background.landscapeX = canvas.width;
         }
 
         function resizeCanvas() {
@@ -293,23 +295,16 @@
             ctx.fill();
 
             // Landscape
-            ctx.font = `150px Arial`;
-            for (let i = 0; i < canvas.width; i += 150) {
-                ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height - 150);
+            ctx.font = `${canvas.height * 0.8}px Arial`;
+            ctx.fillText(background.landscapes[background.currentLandscape], background.landscapeX, canvas.height - 20);
+            background.landscapeX -= 0.5;
+            if (background.landscapeX < -canvas.width) {
+                background.landscapeX = canvas.width;
+                background.currentLandscape = (background.currentLandscape + 1) % background.landscapes.length;
             }
 
             // Ground
-            let groundColor;
-            switch(background.landscapes[background.currentLandscape]) {
-                case '🏝️': groundColor = '#C2B280'; break; // Sandy beach
-                case '🏞️': groundColor = '#228B22'; break; // Forest green
-                case '⛰️': groundColor = '#8B4513'; break; // Brown for mountains
-                case '🏜️': groundColor = '#DEB887'; break; // Burlywood for desert
-                case '🌫️': groundColor = '#708090'; break; // Slategray for foggy
-                case '🌋': groundColor = '#A52A2A'; break; // Brown for volcanic
-                default: groundColor = '#228B22'; // Default green
-            }
-            ctx.fillStyle = groundColor;
+            ctx.fillStyle = '#228B22';
             ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
 
             background.layers.forEach(layer => {
@@ -430,15 +425,11 @@
                     projectile.draw();
                     if (projectile.x > canvas.width) {
                         projectiles.splice(index, 1);
-                    }
                 });
 
-                powerUps.forEach((powerUp, index) => {
+                powerUps.forEach(powerUp => {
                     powerUp.update();
                     powerUp.draw();
-                    if (powerUp.x + 30 < 0) {
-                        powerUps.splice(index, 1);
-                    }
                 });
 
                 particles.forEach((particle, index) => {
@@ -454,23 +445,7 @@
                 checkCollision();
 
                 score++;
-                if (score > highScore) {
-                    highScore = score;
-                }
-
-                // Update weather and landscape
-                background.weatherTimer++;
-                if (background.weatherTimer >= 600) { // Change weather every 10 seconds
-                    background.currentWeather = (background.currentWeather + 1) % background.weatherEffects.length;
-                    background.weatherTimer = 0;
-                }
-
-                background.landscapeTimer++;
-                if (background.landscapeTimer >= background.landscapeChangeInterval) {
-                    background.currentLandscape = (background.currentLandscape + 1) % background.landscapes.length;
-                    background.landscapeTimer = 0;
-                    background.landscapeChangeInterval = Math.floor(Math.random() * 300) + 600; // Random interval between 10-15 seconds
-                }
+                highScore = Math.max(score, highScore);
             }
 
             drawScore();
@@ -482,15 +457,21 @@
             requestAnimationFrame(update);
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                if (gameOver) {
-                    restartGame();
-                } else {
-                    player.jump();
-                }
-            }
-        });
+        function restartGame() {
+            player.x = 80;
+            player.y = canvas.height - 50;
+            player.velY = 0;
+            player.jumping = false;
+            player.doubleJump = false;
+            player.powerUp = null;
+            player.powerUpTimer = 0;
+            enemies = [];
+            particles = [];
+            projectiles = [];
+            powerUps = [];
+            score = 0;
+            gameOver = false;
+        }
 
         canvas.addEventListener('touchstart', () => {
             if (gameOver) {
@@ -500,20 +481,15 @@
             }
         });
 
-        function restartGame() {
-            player.x = 80;
-            player.y = canvas.height - 50;
-            player.velY = 0;
-            player.jumping = false;
-            player.doubleJump = false;
-            player.powerUp = null;
-            enemies = [];
-            particles = [];
-            projectiles = [];
-            powerUps = [];
-            score = 0;
-            gameOver = false;
-        }
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                if (gameOver) {
+                    restartGame();
+                } else {
+                    player.jump();
+                }
+            }
+        });
 
         update();
     </script>
