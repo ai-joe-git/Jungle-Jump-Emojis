@@ -35,7 +35,13 @@
                 { emoji: '🌴', size: 50, speed: 0.5, positions: [] },
                 { emoji: '🌳', size: 40, speed: 1, positions: [] },
                 { emoji: '🌿', size: 30, speed: 1.5, positions: [] }
-            ]
+            ],
+            landscapes: ['🏔️', '🏝️', '🏞️', '⛰️', '🏜️', '🌫️', '🌋'],
+            currentLandscape: 0,
+            weatherEffects: ['', '🌨️', '🌧️', '🌩️', '⛈️'],
+            currentWeather: 0,
+            weatherTimer: 0,
+            landscapeTimer: 0
         };
 
         let dayNightCycle = 0;
@@ -77,22 +83,30 @@
 
         class Player {
             constructor() {
-                this.x = 50;
+                this.x = canvas.width - 80;
                 this.y = canvas.height - 50;
                 this.width = 30;
                 this.height = 30;
                 this.velY = 0;
                 this.jumping = false;
                 this.doubleJump = false;
-                this.powerUp = false;
+                this.powerUp = null;
                 this.powerUpTimer = 0;
+                this.frame = 0;
+                this.frameCount = 2;
+                this.frameInterval = 10;
+                this.frameTimer = 0;
             }
 
             draw() {
+                ctx.save();
+                ctx.scale(-1, 1);
                 ctx.font = '30px Arial';
-                ctx.fillText('🐒', this.x, this.y);
+                ctx.fillText('🐒', -this.x - 30, this.y);
+                ctx.restore();
+
                 if (this.powerUp) {
-                    ctx.fillText('🔥', this.x + 20, this.y - 20);
+                    ctx.fillText(this.powerUp.emoji, this.x + 20, this.y - 20);
                 }
             }
 
@@ -108,13 +122,17 @@
 
                 if (this.powerUp) {
                     this.powerUpTimer++;
-                    if (this.powerUpTimer % 10 === 0) {
-                        projectiles.push(new Projectile(this.x + 30, this.y));
-                    }
                     if (this.powerUpTimer >= 300) {
-                        this.powerUp = false;
+                        this.powerUp = null;
                         this.powerUpTimer = 0;
                     }
+                }
+
+                // Animation
+                this.frameTimer++;
+                if (this.frameTimer >= this.frameInterval) {
+                    this.frame = (this.frame + 1) % this.frameCount;
+                    this.frameTimer = 0;
                 }
             }
 
@@ -133,12 +151,16 @@
 
         class Enemy {
             constructor() {
-                this.x = canvas.width;
+                this.x = 0;
                 this.y = canvas.height - 40;
                 this.width = 30;
                 this.height = 30;
                 this.speed = Math.random() * 2 + 2;
                 this.emoji = ['🦁', '🐯', '🐍', '🦂'][Math.floor(Math.random() * 4)];
+                this.frame = 0;
+                this.frameCount = 2;
+                this.frameInterval = 20;
+                this.frameTimer = 0;
             }
 
             draw() {
@@ -147,7 +169,14 @@
             }
 
             update() {
-                this.x -= this.speed;
+                this.x += this.speed;
+
+                // Animation
+                this.frameTimer++;
+                if (this.frameTimer >= this.frameInterval) {
+                    this.frame = (this.frame + 1) % this.frameCount;
+                    this.frameTimer = 0;
+                }
             }
         }
 
@@ -155,7 +184,7 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.speed = 10;
+                this.speed = -10;
                 this.emoji = '🥥';
             }
 
@@ -171,10 +200,11 @@
 
         class PowerUp {
             constructor() {
-                this.x = canvas.width;
-                this.y = Math.random() * (canvas.height * 0.6 - 100) + 50;
+                this.x = 0;
+                this.y = Math.random() * (canvas.height * 0.6 - 150) + 100;
                 this.speed = 3;
-                this.emoji = '🔥';
+                this.type = Math.floor(Math.random() * 4);
+                this.emoji = ['🔥', '🌟', '🛡️', '⚡'][this.type];
             }
 
             draw() {
@@ -183,7 +213,31 @@
             }
 
             update() {
-                this.x -= this.speed;
+                this.x += this.speed;
+            }
+
+            apply(player) {
+                switch (this.type) {
+                    case 0: // Fire power
+                        player.powerUp = { emoji: '🔥', effect: () => {
+                            if (player.powerUpTimer % 10 === 0) {
+                                projectiles.push(new Projectile(player.x - 30, player.y));
+                            }
+                        }};
+                        break;
+                    case 1: // Star power (invincibility)
+                        player.powerUp = { emoji: '🌟', effect: () => {} };
+                        break;
+                    case 2: // Shield power
+                        player.powerUp = { emoji: '🛡️', effect: () => {} };
+                        break;
+                    case 3: // Lightning power (faster movement)
+                        player.powerUp = { emoji: '⚡', effect: () => {
+                            player.x = Math.max(player.x - 2, canvas.width - 80);
+                        }};
+                        break;
+                }
+                player.powerUpTimer = 0;
             }
         }
 
@@ -234,26 +288,46 @@
 
             // Sun/Moon
             const sunRadius = 30;
-            const sunX = canvas.width - sunRadius - 20;
+            const sunX = 20 + sunRadius;
             const sunY = canvas.height * (0.5 - 0.4 * Math.sin(dayNightCycle));
             ctx.fillStyle = time > 0.5 ? 'yellow' : 'white';
             ctx.beginPath();
             ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
             ctx.fill();
 
+            // Landscape
+            ctx.font = `100px Arial`;
+            ctx.fillText(background.landscapes[background.currentLandscape], canvas.width / 2 - 50, canvas.height - 20);
+
             background.layers.forEach(layer => {
                 ctx.font = `${layer.size}px Arial`;
                 layer.positions.forEach(pos => {
                     ctx.fillText(layer.emoji, pos.x, pos.y);
-                    pos.x -= layer.speed;
-                    if (pos.x < -layer.size) {
-                        pos.x = canvas.width;
+                    pos.x += layer.speed;
+                    if (pos.x > canvas.width) {
+                        pos.x = -layer.size;
                         if (layer.emoji === '☁️') {
                             pos.y = Math.random() * canvas.height * 0.5;
                         }
                     }
                 });
             });
+
+            // Weather effects
+            if (background.currentWeather !== 0) {
+                ctx.font = '40px Arial';
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillText(background.weatherEffects[background.currentWeather], 
+                        Math.random() * canvas.width, 
+                        Math.random() * canvas.height);
+                }
+
+                // Lightning effect for stormy weather
+                if (background.weatherEffects[background.currentWeather] === '⛈️' && Math.random() < 0.03) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            }
         }
 
         function createParticles(x, y) {
@@ -282,7 +356,15 @@
                     player.y < enemy.y + enemy.height &&
                     player.y + player.height > enemy.y
                 ) {
-                    gameOver = true;
+                    if (player.powerUp && player.powerUp.emoji === '🌟') {
+                        enemies.splice(index, 1);
+                        score += 10;
+                    } else if (player.powerUp && player.powerUp.emoji === '🛡️') {
+                        player.powerUp = null;
+                        enemies.splice(index, 1);
+                    } else {
+                        gameOver = true;
+                    }
                 }
 
                 projectiles.forEach((projectile, pIndex) => {
@@ -306,8 +388,7 @@
                     player.y < powerUp.y + 30 &&
                     player.y + player.height > powerUp.y
                 ) {
-                    player.powerUp = true;
-                    player.powerUpTimer = 0;
+                    powerUp.apply(player);
                     powerUps.splice(index, 1);
                 }
             });
@@ -331,18 +412,21 @@
         function update() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            dayNightCycle += Math.PI / (180 * 60); // Full cycle in 3 minutes
-            if (dayNightCycle > Math.PI * 2) dayNightCycle -= Math.PI * 2;
+            dayNightCycle += 0.001;
+            drawBackground();
 
             if (!gameOver) {
-                drawBackground();
                 player.update();
                 player.draw();
+
+                if (player.powerUp) {
+                    player.powerUp.effect();
+                }
 
                 enemies.forEach((enemy, index) => {
                     enemy.update();
                     enemy.draw();
-                    if (enemy.x + enemy.width < 0) {
+                    if (enemy.x > canvas.width) {
                         enemies.splice(index, 1);
                         score++;
                     }
@@ -351,7 +435,7 @@
                 projectiles.forEach((projectile, index) => {
                     projectile.update();
                     projectile.draw();
-                    if (projectile.x > canvas.width) {
+                    if (projectile.x < 0) {
                         projectiles.splice(index, 1);
                     }
                 });
@@ -359,7 +443,7 @@
                 powerUps.forEach((powerUp, index) => {
                     powerUp.update();
                     powerUp.draw();
-                    if (powerUp.x + 30 < 0) {
+                    if (powerUp.x > canvas.width) {
                         powerUps.splice(index, 1);
                     }
                 });
@@ -377,8 +461,17 @@
                 checkCollision();
                 drawScore();
 
-                if (score > highScore) {
-                    highScore = score;
+                // Update weather and landscape
+                background.weatherTimer++;
+                if (background.weatherTimer >= 300) {
+                    background.currentWeather = Math.floor(Math.random() * background.weatherEffects.length);
+                    background.weatherTimer = 0;
+                }
+
+                background.landscapeTimer++;
+                if (background.landscapeTimer >= 600) {
+                    background.currentLandscape = Math.floor(Math.random() * background.landscapes.length);
+                    background.landscapeTimer = 0;
                 }
             } else {
                 drawGameOver();
@@ -387,12 +480,13 @@
             requestAnimationFrame(update);
         }
 
-        function restart() {
-            player.x = 50;
+        function startGame() {
+            player.x = canvas.width - 80;
             player.y = canvas.height - 50;
             player.velY = 0;
-            player.powerUp = false;
-            player.powerUpTimer = 0;
+            player.jumping = false;
+            player.doubleJump = false;
+            player.powerUp = null;
             enemies = [];
             particles = [];
             projectiles = [];
@@ -401,21 +495,21 @@
             gameOver = false;
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                if (gameOver) {
-                    restart();
-                } else {
-                    player.jump();
-                }
+        canvas.addEventListener('touchstart', () => {
+            if (gameOver) {
+                startGame();
+            } else {
+                player.jump();
             }
         });
 
-        canvas.addEventListener('touchstart', () => {
-            if (gameOver) {
-                restart();
-            } else {
-                player.jump();
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                if (gameOver) {
+                    startGame();
+                } else {
+                    player.jump();
+                }
             }
         });
 
