@@ -31,17 +31,18 @@
         const background = {
             layers: [
                 { emoji: '☁️', size: 40, speed: 0.1, positions: [] },
-                { emoji: '🏔️', size: 100, speed: 0.2, positions: [] },
+                { emoji: '🏔️', size: 150, speed: 0.2, positions: [] },
                 { emoji: '🌴', size: 50, speed: 0.5, positions: [] },
                 { emoji: '🌳', size: 40, speed: 1, positions: [] },
                 { emoji: '🌿', size: 30, speed: 1.5, positions: [] }
             ],
             landscapes: ['🏔️', '🏝️', '🏞️', '⛰️', '🏜️', '🌫️', '🌋'],
             currentLandscape: 0,
-            weatherEffects: ['', '🌨️', '🌧️', '🌩️', '⛈️'],
+            weatherEffects: ['☁️', '☁️', '☁️', '☁️'],
             currentWeather: 0,
             weatherTimer: 0,
-            landscapeTimer: 0
+            landscapeTimer: 0,
+            landscapeChangeInterval: 900
         };
 
         let dayNightCycle = 0;
@@ -53,7 +54,7 @@
                 for (let i = 0; i < count; i++) {
                     layer.positions.push({
                         x: i * layer.size,
-                        y: layer.emoji === '☁️' ? Math.random() * canvas.height * 0.5 : canvas.height - layer.size + Math.random() * 20
+                        y: layer.emoji === '☁️' ? Math.random() * canvas.height * 0.5 : canvas.height - layer.size
                     });
                 }
             });
@@ -83,7 +84,7 @@
 
         class Player {
             constructor() {
-                this.x = canvas.width - 80;
+                this.x = 80;
                 this.y = canvas.height - 50;
                 this.width = 30;
                 this.height = 30;
@@ -99,11 +100,8 @@
             }
 
             draw() {
-                ctx.save();
-                ctx.scale(-1, 1);
                 ctx.font = '30px Arial';
-                ctx.fillText('🐒', -this.x - 30, this.y);
-                ctx.restore();
+                ctx.fillText('🐒', this.x, this.y);
 
                 if (this.powerUp) {
                     ctx.fillText(this.powerUp.emoji, this.x + 20, this.y - 20);
@@ -151,7 +149,7 @@
 
         class Enemy {
             constructor() {
-                this.x = 0;
+                this.x = canvas.width;
                 this.y = canvas.height - 40;
                 this.width = 30;
                 this.height = 30;
@@ -169,7 +167,7 @@
             }
 
             update() {
-                this.x += this.speed;
+                this.x -= this.speed;
 
                 // Animation
                 this.frameTimer++;
@@ -184,7 +182,7 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.speed = -10;
+                this.speed = 10;
                 this.emoji = '🥥';
             }
 
@@ -200,7 +198,7 @@
 
         class PowerUp {
             constructor() {
-                this.x = 0;
+                this.x = canvas.width;
                 this.y = Math.random() * (canvas.height * 0.6 - 150) + 100;
                 this.speed = 3;
                 this.type = Math.floor(Math.random() * 4);
@@ -213,7 +211,7 @@
             }
 
             update() {
-                this.x += this.speed;
+                this.x -= this.speed;
             }
 
             apply(player) {
@@ -221,7 +219,7 @@
                     case 0: // Fire power
                         player.powerUp = { emoji: '🔥', effect: () => {
                             if (player.powerUpTimer % 10 === 0) {
-                                projectiles.push(new Projectile(player.x - 30, player.y));
+                                projectiles.push(new Projectile(player.x + 30, player.y));
                             }
                         }};
                         break;
@@ -233,7 +231,7 @@
                         break;
                     case 3: // Lightning power (faster movement)
                         player.powerUp = { emoji: '⚡', effect: () => {
-                            player.x = Math.max(player.x - 2, canvas.width - 80);
+                            player.x = Math.min(player.x + 2, 80);
                         }};
                         break;
                 }
@@ -296,38 +294,24 @@
             ctx.fill();
 
             // Landscape
-            ctx.font = `100px Arial`;
-            ctx.fillText(background.landscapes[background.currentLandscape], canvas.width / 2 - 50, canvas.height - 20);
+            ctx.font = `150px Arial`;
+            for (let i = 0; i < canvas.width; i += 150) {
+                ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height);
+            }
 
             background.layers.forEach(layer => {
                 ctx.font = `${layer.size}px Arial`;
                 layer.positions.forEach(pos => {
-                    ctx.fillText(layer.emoji, pos.x, pos.y);
-                    pos.x += layer.speed;
-                    if (pos.x > canvas.width) {
-                        pos.x = -layer.size;
+                    ctx.fillText(layer.emoji === '☁️' ? background.weatherEffects[background.currentWeather] : layer.emoji, pos.x, pos.y);
+                    pos.x -= layer.speed;
+                    if (pos.x < -layer.size) {
+                        pos.x = canvas.width;
                         if (layer.emoji === '☁️') {
                             pos.y = Math.random() * canvas.height * 0.5;
                         }
                     }
                 });
             });
-
-            // Weather effects
-            if (background.currentWeather !== 0) {
-                ctx.font = '40px Arial';
-                for (let i = 0; i < 5; i++) {
-                    ctx.fillText(background.weatherEffects[background.currentWeather], 
-                        Math.random() * canvas.width, 
-                        Math.random() * canvas.height);
-                }
-
-                // Lightning effect for stormy weather
-                if (background.weatherEffects[background.currentWeather] === '⛈️' && Math.random() < 0.03) {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-            }
         }
 
         function createParticles(x, y) {
@@ -426,7 +410,7 @@
                 enemies.forEach((enemy, index) => {
                     enemy.update();
                     enemy.draw();
-                    if (enemy.x > canvas.width) {
+                    if (enemy.x + enemy.width < 0) {
                         enemies.splice(index, 1);
                         score++;
                     }
@@ -435,15 +419,14 @@
                 projectiles.forEach((projectile, index) => {
                     projectile.update();
                     projectile.draw();
-                    if (projectile.x < 0) {
-                        projectiles.splice(index, 1);
+                    if (projectile.x > canvas.width) {projectiles.splice(index, 1);
                     }
                 });
 
                 powerUps.forEach((powerUp, index) => {
                     powerUp.update();
                     powerUp.draw();
-                    if (powerUp.x > canvas.width) {
+                    if (powerUp.x + 30 < 0) {
                         powerUps.splice(index, 1);
                     }
                 });
@@ -469,7 +452,7 @@
                 }
 
                 background.landscapeTimer++;
-                if (background.landscapeTimer >= 600) {
+                if (background.landscapeTimer >= background.landscapeChangeInterval) {
                     background.currentLandscape = Math.floor(Math.random() * background.landscapes.length);
                     background.landscapeTimer = 0;
                 }
@@ -481,7 +464,7 @@
         }
 
         function startGame() {
-            player.x = canvas.width - 80;
+            player.x = 80;
             player.y = canvas.height - 50;
             player.velY = 0;
             player.jumping = false;
@@ -491,6 +474,9 @@
             particles = [];
             projectiles = [];
             powerUps = [];
+            if (score > highScore) {
+                highScore = score;
+            }
             score = 0;
             gameOver = false;
         }
