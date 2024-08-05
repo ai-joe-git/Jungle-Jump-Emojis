@@ -29,20 +29,19 @@
         let isPortrait = window.innerHeight > window.innerWidth;
 
         const background = {
-    layers: [
-        { emoji: '☁️', size: 40, speed: 0.1, positions: [] },
-        { emoji: '🌴', size: 50, speed: 0.5, positions: [] },
-        { emoji: '🌳', size: 40, speed: 1, positions: [] },
-        { emoji: '🌿', size: 30, speed: 1.5, positions: [] }
-    ],
-    landscapes: ['🏝️', '🏞️', '⛰️', '🏜️', '🌫️', '🌋'],
-    currentLandscape: 0,
-    weatherEffects: ['☁️', '☁️', '☁️', '☁️'],
-    currentWeather: 0,
-    weatherTimer: 0,
-    landscapeTimer: 0,
-    landscapeChangeInterval: 900
-
+            layers: [
+                { emoji: '☁️', size: 40, speed: 0.1, positions: [] },
+                { emoji: '🌴', size: 50, speed: 0.5, positions: [] },
+                { emoji: '🌳', size: 40, speed: 1, positions: [] },
+                { emoji: '🌿', size: 30, speed: 1.5, positions: [] }
+            ],
+            landscapes: ['🏝️', '🏞️', '⛰️', '🏜️', '🌫️', '🌋'],
+            currentLandscape: 0,
+            weatherEffects: ['☁️', '☁️', '☁️', '☁️'],
+            currentWeather: 0,
+            weatherTimer: 0,
+            landscapeTimer: 0,
+            landscapeChangeInterval: 900
         };
 
         let dayNightCycle = 0;
@@ -72,7 +71,6 @@
             initBackground();
         }
 
-        initBackground();
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
@@ -126,7 +124,6 @@
                     }
                 }
 
-                // Animation
                 this.frameTimer++;
                 if (this.frameTimer >= this.frameInterval) {
                     this.frame = (this.frame + 1) % this.frameCount;
@@ -169,7 +166,6 @@
             update() {
                 this.x -= this.speed;
 
-                // Animation
                 this.frameTimer++;
                 if (this.frameTimer >= this.frameInterval) {
                     this.frame = (this.frame + 1) % this.frameCount;
@@ -272,19 +268,17 @@
         let gameOver = false;
 
         function drawBackground() {
-            // Sky gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            const time = (Math.sin(dayNightCycle) + 1) / 2; // 0 to 1
+            const time = (Math.sin(dayNightCycle) + 1) / 2;
             const skyColors = [
-                `rgb(${135 * time}, ${206 * time}, ${235 * time})`, // Sky Blue
-                `rgb(${25 * (1 - time)}, ${25 * (1 - time)}, ${112 * (1 - time)})` // Night Blue
+                `rgb(${135 * time}, ${206 * time}, ${235 * time})`,
+                `rgb(${25 * (1 - time)}, ${25 * (1 - time)}, ${112 * (1 - time)})`
             ];
             gradient.addColorStop(0, skyColors[0]);
             gradient.addColorStop(1, skyColors[1]);
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Sun/Moon
             const sunRadius = 30;
             const sunX = 20 + sunRadius;
             const sunY = canvas.height * (0.5 - 0.4 * Math.sin(dayNightCycle));
@@ -293,27 +287,23 @@
             ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Landscape
-    ctx.font = `150px Arial`;
-    for (let i = 0; i < canvas.width; i += 150) {
-        ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height - 150);
-    }
+            ctx.font = `150px Arial`;
+            for (let i = 0; i < canvas.width; i += 150) {
+                ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height - 150);
+            }
 
-    // Ground
-    let groundColor;
-    switch(background.landscapes[background.currentLandscape]) {
-        case '🏝️': groundColor = '#C2B280'; break; // Sandy beach
-        case '🏞️': groundColor = '#228B22'; break; // Forest green
-        case '⛰️': groundColor = '#8B4513'; break; // Brown for mountains
-        case '🏜️': groundColor = '#DEB887'; break; // Burlywood for desert
-        case '🌫️': groundColor = '#708090'; break; // Slategray for foggy
-        case '🌋': groundColor = '#A52A2A'; break; // Brown for volcanic
-        default: groundColor = '#228B22'; // Default green
-    }
-    ctx.fillStyle = groundColor;
-    ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-
-   
+            let groundColor;
+            switch(background.landscapes[background.currentLandscape]) {
+                case '🏝️': groundColor = '#C2B280'; break;
+                case '🏞️': groundColor = '#228B22'; break;
+                case '⛰️': groundColor = '#8B4513'; break;
+                case '🏜️': groundColor = '#DEB887'; break;
+                case '🌫️': groundColor = '#708090'; break;
+                case '🌋': groundColor = '#A52A2A'; break;
+                default: groundColor = '#228B22';
+            }
+            ctx.fillStyle = groundColor;
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
 
             background.layers.forEach(layer => {
                 ctx.font = `${layer.size}px Arial`;
@@ -427,6 +417,8 @@
                     enemy.update();
                     enemy.draw();
                     if (enemy.x + enemy.width < 0) {
+                        enemies.splice
+if (enemy.x + enemy.width < 0) {
                         enemies.splice(index, 1);
                         score++;
                     }
@@ -435,7 +427,8 @@
                 projectiles.forEach((projectile, index) => {
                     projectile.update();
                     projectile.draw();
-                    if (projectile.x > canvas.width) {projectiles.splice(index, 1);
+                    if (projectile.x > canvas.width) {
+                        projectiles.splice(index, 1);
                     }
                 });
 
@@ -460,18 +453,16 @@
                 checkCollision();
                 drawScore();
 
-                // Update weather and landscape
                 background.weatherTimer++;
-                if (background.weatherTimer >= 300) {
-                    background.currentWeather = Math.floor(Math.random() * background.weatherEffects.length);
+                if (background.weatherTimer >= 600) {
+                    background.currentWeather = (background.currentWeather + 1) % background.weatherEffects.length;
                     background.weatherTimer = 0;
                 }
 
                 background.landscapeTimer++;
-    if (background.landscapeTimer >= background.landscapeChangeInterval) {
-        background.currentLandscape = (background.currentLandscape + 1) % background.landscapes.length;
-        background.landscapeTimer = 0;
-    };
+                if (background.landscapeTimer >= background.landscapeChangeInterval) {
+                    background.currentLandscape = (background.currentLandscape + 1) % background.landscapes.length;
+                    background.landscapeTimer = 0;
                 }
             } else {
                 drawGameOver();
@@ -488,18 +479,16 @@
             player.doubleJump = false;
             player.powerUp = null;
             enemies = [];
-            particles = [];
             projectiles = [];
             powerUps = [];
-            if (score > highScore) {
-                highScore = score;
-            }
+            particles = [];
             score = 0;
             gameOver = false;
         }
 
-        canvas.addEventListener('touchstart', () => {
+        canvas.addEventListener('click', () => {
             if (gameOver) {
+                highScore = Math.max(highScore, score);
                 startGame();
             } else {
                 player.jump();
@@ -509,6 +498,7 @@
         document.addEventListener('keydown', (event) => {
             if (event.code === 'Space') {
                 if (gameOver) {
+                    highScore = Math.max(highScore, score);
                     startGame();
                 } else {
                     player.jump();
@@ -516,7 +506,9 @@
             }
         });
 
+        startGame();
         update();
     </script>
 </body>
 </html>
+
