@@ -194,6 +194,24 @@
                 this.x += this.speed;
             }
         }
+        
+        class Projectile2 {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.speed = 10;
+                this.emoji = '⚡';
+            }
+
+            draw() {
+                ctx.font = '20px Arial';
+                ctx.fillText(this.emoji, this.x, this.y);
+            }
+
+            update() {
+                this.x += this.speed;
+            }
+        }
 
         class PowerUp {
             constructor() {
@@ -231,7 +249,7 @@
                     case 3: // Fire power
                         player.powerUp = { emoji: '⚡', effect: () => {
                             if (player.powerUpTimer % 10 === 0) {
-                                projectiles.push(new Projectile(player.x + 30, player.y));
+                                projectiles.push(new Projectile2(player.x + 30, player.y));
                             }
                         }};
                         break;
