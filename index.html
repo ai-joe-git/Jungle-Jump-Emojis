@@ -35,7 +35,7 @@
                 { emoji: '🌳', size: 40, speed: 1, positions: [] },
                 { emoji: '🌿', size: 30, speed: 1.5, positions: [] }
             ],
-            landscapes: ['🏝️', '🏞️', '⛰️', '🏜️', '🌫️', '🌋'],
+            landscapes: ['🌴', '🏔️', '⛰️', '🌵', '🗻', '🌋'],
             currentLandscape: 0,
             weatherEffects: ['☁️', '☁️', '☁️', '☁️'],
             currentWeather: 0,
@@ -201,7 +201,7 @@
                 this.y = Math.random() * (canvas.height * 0.6 - 150) + 100;
                 this.speed = 3;
                 this.type = Math.floor(Math.random() * 4);
-                this.emoji = ['🔥', '🌟', '🛡️', '⚡'][this.type];
+                this.emoji = ['🥥', '🌟', '🛡️', '⚡'][this.type];
             }
 
             draw() {
@@ -216,7 +216,7 @@
             apply(player) {
                 switch (this.type) {
                     case 0: // Fire power
-                        player.powerUp = { emoji: '🔥', effect: () => {
+                        player.powerUp = { emoji: '🥥', effect: () => {
                             if (player.powerUpTimer % 10 === 0) {
                                 projectiles.push(new Projectile(player.x + 30, player.y));
                             }
@@ -228,9 +228,11 @@
                     case 2: // Shield power
                         player.powerUp = { emoji: '🛡️', effect: () => {} };
                         break;
-                    case 3: // Lightning power (faster movement)
+                    case 3: // Fire power
                         player.powerUp = { emoji: '⚡', effect: () => {
-                            player.x = Math.min(player.x + 2, 80);
+                            if (player.powerUpTimer % 10 === 0) {
+                                projectiles.push(new Projectile(player.x + 30, player.y));
+                            }
                         }};
                         break;
                 }
@@ -301,11 +303,11 @@
             // Ground
             let groundColor;
             switch(background.landscapes[background.currentLandscape]) {
-                case '🏝️': groundColor = '#C2B280'; break; // Sandy beach
-                case '🏞️': groundColor = '#228B22'; break; // Forest green
+                case '🌴': groundColor = '#C2B280'; break; // Sandy beach
+                case '🗻': groundColor = '#228B22'; break; // Forest green
                 case '⛰️': groundColor = '#8B4513'; break; // Brown for mountains
-                case '🏜️': groundColor = '#DEB887'; break; // Burlywood for desert
-                case '🌫️': groundColor = '#708090'; break; // Slategray for foggy
+                case '🌵': groundColor = '#DEB887'; break; // Burlywood for desert
+                case '🏔️': groundColor = '#708090'; break; // Slategray for foggy
                 case '🌋': groundColor = '#A52A2A'; break; // Brown for volcanic
                 default: groundColor = '#228B22'; // Default green
             }
