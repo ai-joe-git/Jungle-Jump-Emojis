@@ -294,7 +294,7 @@
 
             // Landscape
             ctx.font = `200px Arial`;
-            for (let i = 0; i < canvas.width; i += 200) {
+            for (let i = -200; i < canvas.width; i += 200) {
                 ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height - 40);
             }
 
@@ -455,6 +455,18 @@
 
                 score++;
                 highScore = Math.max(score, highScore);
+
+                background.weatherTimer++;
+                if (background.weatherTimer >= 600) {
+                    background.currentWeather = (background.currentWeather + 1) % background.weatherEffects.length;
+                    background.weatherTimer = 0;
+                }
+
+                background.landscapeTimer++;
+                if (background.landscapeTimer >= background.landscapeChangeInterval) {
+                    background.currentLandscape = (background.currentLandscape + 1) % background.landscapes.length;
+                    background.landscapeTimer = 0;
+                }
             }
 
             drawScore();
