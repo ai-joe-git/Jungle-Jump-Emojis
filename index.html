@@ -293,9 +293,9 @@
             ctx.fill();
 
             // Landscape
-            ctx.font = `150px Arial`;
-            for (let i = 0; i < canvas.width; i += 150) {
-                ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height - 150);
+            ctx.font = `180px Arial`;
+            for (let i = 0; i < canvas.width; i += 180) {
+                ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height - 120);
             }
 
             // Ground
@@ -416,13 +416,17 @@
                 player.update();
                 player.draw();
 
-                if (player.powerUp) {
+                if (player.powerUp && player.powerUp.effect) {
                     player.powerUp.effect();
                 }
 
-                enemies.forEach(enemy => {
+                enemies.forEach((enemy, index) => {
                     enemy.update();
                     enemy.draw();
+                    if (enemy.x + enemy.width < 0) {
+                        enemies.splice(index, 1);
+                        score++;
+                    }
                 });
 
                 projectiles.forEach((projectile, index) => {
@@ -452,53 +456,31 @@
                 spawnEnemy();
                 spawnPowerUp();
                 checkCollision();
+                drawScore();
 
                 score++;
                 if (score > highScore) {
                     highScore = score;
                 }
 
-                // Update weather and landscape
-                background.weatherTimer++;
-                if (background.weatherTimer >= 600) { // Change weather every 10 seconds
-                    background.currentWeather = (background.currentWeather + 1) % background.weatherEffects.length;
-                    background.weatherTimer = 0;
-                }
-
+                // Update background
                 background.landscapeTimer++;
                 if (background.landscapeTimer >= background.landscapeChangeInterval) {
                     background.currentLandscape = (background.currentLandscape + 1) % background.landscapes.length;
                     background.landscapeTimer = 0;
-                    background.landscapeChangeInterval = Math.floor(Math.random() * 300) + 600; // Random interval between 10-15 seconds
                 }
-            }
 
-            drawScore();
-
-            if (gameOver) {
+                background.weatherTimer++;
+                if (background.weatherTimer >= 600) {
+                    background.currentWeather = (background.currentWeather + 1) % background.weatherEffects.length;
+                    background.weatherTimer = 0;
+                }
+            } else {
                 drawGameOver();
             }
 
             requestAnimationFrame(update);
         }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                if (gameOver) {
-                    restartGame();
-                } else {
-                    player.jump();
-                }
-            }
-        });
-
-        canvas.addEventListener('touchstart', () => {
-            if (gameOver) {
-                restartGame();
-            } else {
-                player.jump();
-            }
-        });
 
         function restartGame() {
             player.x = 80;
@@ -508,12 +490,30 @@
             player.doubleJump = false;
             player.powerUp = null;
             enemies = [];
-            particles = [];
-            projectiles = [];
             powerUps = [];
+            projectiles = [];
+            particles = [];
             score = 0;
             gameOver = false;
         }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                if (!gameOver) {
+                    player.jump();
+                } else {
+                    restartGame();
+                }
+            }
+        });
+
+        canvas.addEventListener('touchstart', () => {
+            if (!gameOver) {
+                player.jump();
+            } else {
+                restartGame();
+            }
+        });
 
         update();
     </script>
