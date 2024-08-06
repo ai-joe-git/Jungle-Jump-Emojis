@@ -293,9 +293,9 @@
             ctx.fill();
 
             // Landscape
-            ctx.font = `180px Arial`;
-            for (let i = 0; i < canvas.width; i += 180) {
-                ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height - 120);
+            ctx.font = `200px Arial`;
+            for (let i = 0; i < canvas.width; i += 200) {
+                ctx.fillText(background.landscapes[background.currentLandscape], i, canvas.height - 40);
             }
 
             // Ground
@@ -420,13 +420,9 @@
                     player.powerUp.effect();
                 }
 
-                enemies.forEach((enemy, index) => {
+                enemies.forEach(enemy => {
                     enemy.update();
                     enemy.draw();
-                    if (enemy.x + enemy.width < 0) {
-                        enemies.splice(index, 1);
-                        score++;
-                    }
                 });
 
                 projectiles.forEach((projectile, index) => {
@@ -456,31 +452,37 @@
                 spawnEnemy();
                 spawnPowerUp();
                 checkCollision();
-                drawScore();
 
                 score++;
-                if (score > highScore) {
-                    highScore = score;
-                }
+                highScore = Math.max(score, highScore);
+            }
 
-                // Update background
-                background.landscapeTimer++;
-                if (background.landscapeTimer >= background.landscapeChangeInterval) {
-                    background.currentLandscape = (background.currentLandscape + 1) % background.landscapes.length;
-                    background.landscapeTimer = 0;
-                }
+            drawScore();
 
-                background.weatherTimer++;
-                if (background.weatherTimer >= 600) {
-                    background.currentWeather = (background.currentWeather + 1) % background.weatherEffects.length;
-                    background.weatherTimer = 0;
-                }
-            } else {
+            if (gameOver) {
                 drawGameOver();
             }
 
             requestAnimationFrame(update);
         }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                if (gameOver) {
+                    restartGame();
+                } else {
+                    player.jump();
+                }
+            }
+        });
+
+        canvas.addEventListener('touchstart', () => {
+            if (gameOver) {
+                restartGame();
+            } else {
+                player.jump();
+            }
+        });
 
         function restartGame() {
             player.x = 80;
@@ -490,30 +492,12 @@
             player.doubleJump = false;
             player.powerUp = null;
             enemies = [];
-            powerUps = [];
             projectiles = [];
+            powerUps = [];
             particles = [];
             score = 0;
             gameOver = false;
         }
-
-        document.addEventListener('keydown', (event) => {
-            if (event.code === 'Space') {
-                if (!gameOver) {
-                    player.jump();
-                } else {
-                    restartGame();
-                }
-            }
-        });
-
-        canvas.addEventListener('touchstart', () => {
-            if (!gameOver) {
-                player.jump();
-            } else {
-                restartGame();
-            }
-        });
 
         update();
     </script>
